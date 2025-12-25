@@ -1,8 +1,15 @@
 # Homebrew tap
 
 This is the [Homebrew][homebrew] [tap](https://docs.brew.sh/Taps.html) for
-[Task][task].
+[TaskR][taskr], a forked version of the Task task runner.
+
+## Installation
+
+```bash
+brew tap vikbert/taskr
+brew install taskr
+```
 
 [homebrew]: https://brew.sh/
 [tap]: https://docs.brew.sh/Taps.html
-[task]: https://github.com/go-task/task
+[taskr]: https://github.com/vikbert/taskr
