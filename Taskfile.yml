@@ -1,0 +1,178 @@
+version: '3'
+project: Homebrew
+banner: true
+
+vars:
+  FORMULA_FILE: Formula/taskr.rb
+  REPO_URL: https://github.com/vikbert/taskr
+
+tasks:
+  default:
+    desc: 显示所有可用任务
+    cmds:
+      - taskr --list
+
+  update:
+    desc: 更新公式到新版本
+    summary: |
+      更新 Homebrew 公式到指定版本
+      用法: task update <版本号>
+      例如: task update 3.47.7
+    cmds:
+      - |
+        if [ -z "{{.CLI_ARGS}}" ]; then
+          echo "❌ 错误: 请提供版本号"
+          echo "用法: task update <版本号>"
+          echo "例如: task update 3.47.7"
+          exit 1
+        fi
+        ./update_formula.sh {{.CLI_ARGS}}
+
+  verify:
+    desc: 验证公式文件的更改
+    summary: 显示 Formula/taskr.rb 的 git diff 和当前内容
+    cmds:
+      - |
+        echo "📋 显示更改差异："
+        echo "=========================================="
+        git diff {{.FORMULA_FILE}} || echo "没有未暂存的更改"
+        echo ""
+        echo "📝 当前公式文件内容："
+        echo "=========================================="
+        cat {{.FORMULA_FILE}}
+
+  commit:
+    desc: 提交公式更改到 Git
+    summary: |
+      添加、提交并推送公式更改
+      用法: task commit [--no-push] 跳过推送步骤
+    cmds:
+      - |
+        if ! git diff --quiet {{.FORMULA_FILE}} && ! git diff --cached --quiet {{.FORMULA_FILE}}; then
+          echo "📦 添加文件到暂存区..."
+          git add {{.FORMULA_FILE}}
+
+          # 从公式文件中提取版本号
+          VERSION=$(grep 'url.*tags/v' {{.FORMULA_FILE}} | sed -E 's/.*tags\/v([0-9]+\.[0-9]+\.[0-9]+).*/\1/' | head -1)
+          if [ -z "$VERSION" ]; then
+            VERSION="unknown"
+          fi
+
+          echo "💾 提交更改..."
+          git commit -m "Update TaskR to v${VERSION}"
+
+          # 检查是否需要推送
+          if [[ "{{.CLI_ARGS}}" != *"--no-push"* ]]; then
+            echo "🚀 推送到远程仓库..."
+            git push origin main
+            echo "✅ 已成功推送更改"
+          else
+            echo "ℹ️  跳过推送（使用 --no-push 标志）"
+            echo "手动推送: git push origin main"
+          fi
+        else
+          echo "ℹ️  没有需要提交的更改"
+        fi
+
+  test:
+    desc: 测试新版本的安装
+    summary: 更新 Homebrew，重新安装 taskr 并检查版本
+    cmds:
+      - |
+        echo "🔄 更新 Homebrew..."
+        brew update
+
+        echo "📦 重新安装 taskr..."
+        brew reinstall taskr
+
+        echo "✅ 检查安装的版本："
+        taskr --version
+
+  version:
+    desc: 显示当前公式的版本信息
+    summary: 从 Formula/taskr.rb 提取并显示版本号
+    cmds:
+      - |
+        echo "📋 当前公式版本信息："
+        echo "=========================================="
+        VERSION=$(grep 'url.*tags/v' {{.FORMULA_FILE}} | sed -E 's/.*tags\/v([0-9]+\.[0-9]+\.[0-9]+).*/\1/' | head -1)
+        SHA256=$(grep 'sha256' {{.FORMULA_FILE}} | sed -E 's/.*sha256 "([^"]+)".*/\1/' | head -1)
+        URL=$(grep 'url' {{.FORMULA_FILE}} | grep -v 'head' | sed -E 's/.*url "([^"]+)".*/\1/' | head -1)
+
+        echo "版本号: v${VERSION}"
+        echo "SHA256: $SHA256"
+        echo "URL:    $URL"
+        echo ""
+        echo "公式文件: {{.FORMULA_FILE}}"
+
+  status:
+    desc: 检查 Git 仓库状态
+    summary: 显示仓库状态和未提交的更改
+    cmds:
+      - |
+        echo "📊 Git 仓库状态："
+        echo "=========================================="
+        git status
+        echo ""
+        echo "📝 公式文件状态："
+        echo "=========================================="
+        if git diff --quiet {{.FORMULA_FILE}} 2>/dev/null; then
+          if git diff --cached --quiet {{.FORMULA_FILE}} 2>/dev/null; then
+            echo "✅ {{.FORMULA_FILE}} 没有未提交的更改"
+          else
+            echo "📦 {{.FORMULA_FILE}} 已暂存，等待提交"
+            git diff --cached {{.FORMULA_FILE}}
+          fi
+        else
+          echo "📝 {{.FORMULA_FILE}} 有未暂存的更改："
+          git diff {{.FORMULA_FILE}}
+        fi
+
+  release:
+    desc: 完整发布流程（更新、验证、提交、测试）
+    summary: |
+      执行完整的发布流程：
+      1. 更新公式到新版本
+      2. 验证更改
+      3. 提交并推送
+      4. 测试安装
+      用法: task release <版本号>
+      例如: task release 3.47.7
+    cmds:
+      - |
+        if [ -z "{{.CLI_ARGS}}" ]; then
+          echo "❌ 错误: 请提供版本号"
+          echo "用法: task release <版本号>"
+          echo "例如: task release 3.47.7"
+          exit 1
+        fi
+
+        echo "🚀 开始发布流程..."
+        echo ""
+
+        echo "步骤 1/4: 更新公式..."
+        task update {{.CLI_ARGS}}
+        echo ""
+
+        echo "步骤 2/4: 验证更改..."
+        task verify
+        echo ""
+
+        read -p "是否继续提交更改? (y/n) " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+          echo "步骤 3/4: 提交更改..."
+          task commit
+          echo ""
+
+          echo "步骤 4/4: 测试安装..."
+          task test
+          echo ""
+
+          echo "✅ 发布流程完成！"
+        else
+          echo "ℹ️  已取消提交，你可以稍后手动运行:"
+          echo "  task commit"
+          echo "  task test"
+        fi
+
