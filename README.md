@@ -1,9 +1,9 @@
-# Homebrew tap for TaskR
+# Homebrew tap for Taskr
 
 This is the [Homebrew][homebrew] [tap](https://docs.brew.sh/Taps.html) for
 [TaskR][taskr], a forked and enhanced version of the Task task runner.
 
-## Installation
+## Installation via brew
 
 ```bash
 brew tap vikbert/taskr

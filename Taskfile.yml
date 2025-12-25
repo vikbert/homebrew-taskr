@@ -1,6 +1,4 @@
 version: '3'
-project: Homebrew
-banner: true
 
 vars:
   FORMULA_FILE: Formula/taskr.rb
@@ -16,14 +14,14 @@ tasks:
     desc: 更新公式到新版本
     summary: |
       更新 Homebrew 公式到指定版本
-      用法: task update <版本号>
-      例如: task update 3.47.7
+      用法: taskr update -- <版本号>
+      例如: taskr update -- 3.47.7
     cmds:
       - |
         if [ -z "{{.CLI_ARGS}}" ]; then
           echo "❌ 错误: 请提供版本号"
-          echo "用法: task update <版本号>"
-          echo "例如: task update 3.47.7"
+          echo "用法: taskr update -- <版本号>"
+          echo "例如: taskr update -- 3.47.7"
           exit 1
         fi
         ./update_formula.sh {{.CLI_ARGS}}
@@ -45,7 +43,7 @@ tasks:
     desc: 提交公式更改到 Git
     summary: |
       添加、提交并推送公式更改
-      用法: task commit [--no-push] 跳过推送步骤
+      用法: taskr commit [--no-push] 跳过推送步骤
     cmds:
       - |
         if ! git diff --quiet {{.FORMULA_FILE}} && ! git diff --cached --quiet {{.FORMULA_FILE}}; then
@@ -59,7 +57,7 @@ tasks:
           fi
 
           echo "💾 提交更改..."
-          git commit -m "Update TaskR to v${VERSION}"
+          git commit -m "Update Taskr to v${VERSION}"
 
           # 检查是否需要推送
           if [[ "{{.CLI_ARGS}}" != *"--no-push"* ]]; then
@@ -136,14 +134,14 @@ tasks:
       2. 验证更改
       3. 提交并推送
       4. 测试安装
-      用法: task release <版本号>
-      例如: task release 3.47.7
+      用法: taskr release -- <版本号>
+      例如: taskr release -- 3.47.7
     cmds:
       - |
         if [ -z "{{.CLI_ARGS}}" ]; then
           echo "❌ 错误: 请提供版本号"
-          echo "用法: task release <版本号>"
-          echo "例如: task release 3.47.7"
+          echo "用法: taskr release -- <版本号>"
+          echo "例如: taskr release -- 3.47.7"
           exit 1
         fi
 
@@ -151,28 +149,28 @@ tasks:
         echo ""
 
         echo "步骤 1/4: 更新公式..."
-        task update {{.CLI_ARGS}}
+        taskr update -- {{.CLI_ARGS}}
         echo ""
 
         echo "步骤 2/4: 验证更改..."
-        task verify
+        taskr verify
         echo ""
 
         read -p "是否继续提交更改? (y/n) " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
           echo "步骤 3/4: 提交更改..."
-          task commit
+          taskr commit
           echo ""
 
           echo "步骤 4/4: 测试安装..."
-          task test
+          taskr test
           echo ""
 
           echo "✅ 发布流程完成！"
         else
           echo "ℹ️  已取消提交，你可以稍后手动运行:"
-          echo "  task commit"
-          echo "  task test"
+          echo "  taskr commit"
+          echo "  taskr test"
         fi
 
