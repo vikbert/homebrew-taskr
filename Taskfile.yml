@@ -1,4 +1,5 @@
 version: '3'
+banner: true
 
 vars:
   FORMULA_FILE: Formula/taskr.rb
