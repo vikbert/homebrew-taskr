@@ -12,7 +12,7 @@ class Taskr < Formula
   depends_on "go" => :build
 
   def install
-    system "go", "build", "-ldflags", "-s -w", "-o", bin/"taskr", "."
+    system "go", "build", "-ldflags", "-s -w", "-o", bin/"taskr", "./cmd/taskr"
   end
 
   test do
